@@ -194,7 +194,6 @@ class FlowWrapper:
         self._env = env_fn()
         self.n = n
         self.device = device
-        assert n > 0
         assert (not cond) or (n > 0)
         self.cond = cond
         flow_checkpoint = self._env.get_primitive_flow_checkpoint(model='flow', cond=cond, n_step=self.n)

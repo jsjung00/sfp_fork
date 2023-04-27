@@ -3,6 +3,8 @@ Implementation of datasets for training conditional models.
 """
 import numpy as np
 import torch
+import sys 
+sys.path.insert(1, '/home/ripl/bpe/sfp')
 from envs import get_primitive_dataset
 import os.path as osp
 import os
@@ -30,6 +32,7 @@ class Dataset(torch.utils.data.Dataset):
                            'action+state': ['actions', 'states', 'goals'], 'state+goal': ['states', 'goals']}[mode]
         env = 'sawyer' if env == 'meta-world' else env
         env = 'maze' if env == 'point-maze' else env        
+
 
         assert not (self.one_step and n_step!=1)
         assert not ('observations' in self.label_keys and (n_step > 1 or len(self.label_keys) > 1)), 'If working with images you cannot condition on else.'

@@ -19,16 +19,31 @@ if __name__ == "__main__":
     elif args.env == 'point-maze':
         name = 'maze_primitive'
     else:
-        raise Exception('Unknown environment name.')
+        name = args.env 
+        print("This should be the dataset file excluding .hdf5")
+        path = osp.join(osp.abspath(osp.expanduser("~")), f'.d4rl/datasets/{name}.hdf5')
+        all_trajs = {'actions': [], 'states': [], 'goals': [], 'terminals': [], 'timeouts': []}
+        data = np.load(path, allow_pickle=True).item()
+        print([data[k].shape for k, _ in all_trajs.items()])
+        all_trajs = {k: v + [data[k]] for k, v in all_trajs.items()}
+        all_trajs = {k: np.concatenate(v, 0) for k, v in all_trajs.items()}
+        print('Final action size:', all_trajs['actions'].shape)
+        np.save(osp.join(osp.abspath(osp.expanduser("~")), f'.d4rl/datasets/{name}_distilled.npy'), all_trajs)
+
 
     data_dir = osp.join(osp.abspath(osp.expanduser("~")), f'.d4rl/datasets/{name}/')
     paths = [osp.join(data_dir, p) for p in os.listdir(data_dir)]
     all_trajs = {'actions': [], 'states': [], 'goals': [], 'terminals': [], 'timeouts': []}
     for path in sorted(paths):
-        print(path)
+        #print(path)
         data = np.load(path, allow_pickle=True).item()
         print([data[k].shape for k, _ in all_trajs.items()])
         all_trajs = {k: v + [data[k]] for k, v in all_trajs.items()}
+        
+
     all_trajs = {k: np.concatenate(v, 0) for k, v in all_trajs.items()}
+    for k,v in all_trajs.items():
+        print(f'Final {k} size: {v.shape}')
+        
     print('Final action size:', all_trajs['actions'].shape)
     np.save(osp.join(osp.abspath(osp.expanduser("~")), f'.d4rl/datasets/{name}_distilled.npy'), all_trajs)

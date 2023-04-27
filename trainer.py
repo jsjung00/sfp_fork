@@ -2,6 +2,7 @@ import time
 import numpy as np
 import torch
 from utils import BCDataset
+from envs import get_primitive_dataset
 
 class Trainer:
     '''
@@ -158,18 +159,19 @@ class Trainer:
                 self.logger.log_tabular('EpLen', average_only=True)
                 self.logger.log_tabular('TestEpLen', average_only=True)
                 self.logger.log_tabular('TotalEnvInteracts', t)
-                self.logger.log_tabular('Q1Vals', with_min_and_max=True)
-                self.logger.log_tabular('Q2Vals', with_min_and_max=True)
-                self.logger.log_tabular('Weights', with_min_and_max=True)
-                self.logger.log_tabular('Priorities', with_min_and_max=True)
-                self.logger.log_tabular('LogPi', with_min_and_max=True)
-                self.logger.log_tabular('LogStd', with_min_and_max=True)
-                self.logger.log_tabular('H', with_min_and_max=True)
-                self.logger.log_tabular('PriorP', with_min_and_max=True)
-                self.logger.log_tabular('MixingWeight', with_min_and_max=True)
-                self.logger.log_tabular('LossPi', average_only=True)
-                self.logger.log_tabular('LossQ', average_only=True)
-                self.logger.log_tabular('Time', time.time() - start_time)
+                if t + 1 >= self.update_after:
+                    self.logger.log_tabular('Q1Vals', with_min_and_max=True)
+                    self.logger.log_tabular('Q2Vals', with_min_and_max=True)
+                    self.logger.log_tabular('Weights', with_min_and_max=True)
+                    self.logger.log_tabular('Priorities', with_min_and_max=True)
+                    self.logger.log_tabular('LogPi', with_min_and_max=True)
+                    self.logger.log_tabular('LogStd', with_min_and_max=True)
+                    self.logger.log_tabular('H', with_min_and_max=True)
+                    self.logger.log_tabular('PriorP', with_min_and_max=True)
+                    self.logger.log_tabular('MixingWeight', with_min_and_max=True)
+                    self.logger.log_tabular('LossPi', average_only=True)
+                    self.logger.log_tabular('LossQ', average_only=True)
+                    self.logger.log_tabular('Time', time.time() - start_time)
                 self.logger.dump_tabular()
 
     def test_agent(self, agent, test_env):
@@ -218,10 +220,14 @@ class Trainer:
             self.logger.log_video(video_name, frames, global_step, test_env.metadata['video.frames_per_second'])
 
     def sample_actions_from_dataset(self, env):
+        dataset = env.get_primitive_dataset()
+
         if not self.rand_init_cond:
-            idx = np.random.choice(len(env.get_primitive_dataset()['actions'])//500) * 500
+            idx = np.random.choice(len(dataset['actions'])//500) * 500
         elif self.prior_n_step == 1:
-            idx = np.random.choice(len(env.get_primitive_dataset()['actions']))
+            idx = np.random.choice(len(dataset['actions']))
         else:
-            idx = np.random.choice(len(env.get_primitive_dataset()['actions'])-self.prior_n_step)
-        return env.get_primitive_dataset()['actions'][idx:idx+self.prior_n_step]
+            idx = np.random.choice(len(dataset['actions'])-self.prior_n_step)
+        
+        return dataset['actions'][idx:idx+self.prior_n_step]
+

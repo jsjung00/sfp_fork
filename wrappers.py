@@ -195,7 +195,7 @@ class FlowWrapper:
         self.n = n
         self.device = device
         assert n > 0
-        assert (not cond) or (n > 1)
+        assert (not cond) or (n > 0)
         self.cond = cond
         flow_checkpoint = self._env.get_primitive_flow_checkpoint(model='flow', cond=cond, n_step=self.n)
         if self.cond:  # conditional flow forces number of steps to one

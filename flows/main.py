@@ -160,7 +160,7 @@ def main(args):
 
     # main loop
     for epoch in range(args.epochs):
-        print('Epoch: {}'.format(epoch))
+        print('Epoch: {}'.format(epoch))    
 
         train_loss = train(model, optimizer, train_loader, device, args.deterministic, args.gaussian)
         val_loss = validate(model, val_loader, device, args.deterministic, args.gaussian)
@@ -188,7 +188,11 @@ def main(args):
             print('Saving best model ...', '')
             torch.save(best_model, osp.join(default_data_dir, exp_name) + "/model.pt")
             print('DONE')
-    filename = f'{args.env}_flow_{args.mode}_{args.n_step}.pt'
+    filename = f'{args.env}_primitive_flow_{args.mode}_{args.n_step}.pt'
+    
+    #creates a directory if doesn't exist
+    os.makedirs(FLOW_PATH, exist_ok=True)
+    
     torch.save(best_model, osp.join(FLOW_PATH, filename))
     log_file.close()
 

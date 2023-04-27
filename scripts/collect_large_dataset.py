@@ -8,6 +8,8 @@ import argparse
 import os.path as osp
 import numpy as np
 from metaworld.envs import ALL_V2_ENVIRONMENTS_GOAL_OBSERVABLE
+import sys 
+sys.path.insert(1, '/home/ripl/bpe/sfp')
 from envs import MazeEnv
 
 def save_trajectory(name, seed=42):
@@ -116,7 +118,7 @@ def save_trajectory(name, seed=42):
     np.save(osp.join(data_dir, f'{name}_{seed}.npy'), buffer)
 
 if __name__ == "__main__":
-    num_trajs = 4000
+    num_trajs = 40
     parser = argparse.ArgumentParser()
     parser.add_argument(f'--env', default='maze_primitive', type=str, help='environment for trajectory extraction (one of point-maze and meta-world)')
     args = parser.parse_args()

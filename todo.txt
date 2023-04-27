@@ -1,0 +1,7 @@
+- train flow model
+- get the ant-maze environment to work 
+
+
+
+
+- Figure out why it is not saving to flows (and make sure it opens the right directory) 

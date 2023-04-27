@@ -1,5 +1,5 @@
 {
-    "env": ["sawyer", "environment"],
+    "env": ["antmaze-medium-diverse-v1", "environment"],
     "mode": ["action", "or 'state' or 'image' or 'action+state' or 'state+goal'"],
     "n_step": [1, "number of steps to condition upon"],
     "batch_size": [400, "input batch size for training"],

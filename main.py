@@ -15,6 +15,8 @@ from replays import HERReplayBuffer
 from trainer import Trainer
 from utils import setup_logger_kwargs, set_seeds, str2bool
 from wrappers import wrap_env_fn
+import gym 
+import d4rl
 
 DEFAULT_CONFIG_PATH = 'default_params.json'
 
@@ -51,7 +53,7 @@ def main(args):
     # Create replay buffer
     temp_env = wrapped_env_fn()
     buffer = HERReplayBuffer(obs_space=temp_env.observation_space, act_dim=temp_env.action_space.shape[0],
-                             size=args.replay_size, T=temp_env.max_steps, her=args.her,
+                             size=args.replay_size, T=temp_env._max_episode_steps, her=args.her,
                              replay_k=args.replay_k, reward_fun=temp_env.compute_reward, prioritize=args.prioritize,
                              alpha=args.prioritize_alpha, beta=args.prioritize_beta, epsilon=args.prioritize_epsilon,
                              gamma=args.gamma, n_step=args.n_step_rew, clip_rew=args.clip_rew, prior_n_step=args.prior_n_step)

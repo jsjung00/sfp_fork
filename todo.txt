@@ -1,7 +1,24 @@
-- train flow model
-- get the ant-maze environment to work 
+- check SAC parameters
+- tf events file -> csv (and get graphs immediately)
 
 
 
 
-- Figure out why it is not saving to flows (and make sure it opens the right directory) 
+
+Project Items 
+- SFP (medium, large, kitchen-mixed, coinrun)
+- Run discrete (medium, large, kitchen-mixed, coinrun)
+- Spirl cluster fix 
+- Run spirl (medium, large, kitchen-mixed, coinrun)
+
+Ablations 
+- choice of k (antmaze medium and coinrun) 
+- choice of max vocab size 
+- choice of min vocab size 
+
+- write code for RND + BPE vs RND 
+- run BC on discrete actions (on Slurm) 
+
+- Generating figures 
+- Write the paper
+

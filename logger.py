@@ -95,7 +95,9 @@ class Logger:
         if self.first_row:
             self.log_headers.append(key)
         else:
-            assert key in self.log_headers, "Trying to introduce a new key %s that you didn't include in the first iteration" % key
+            if (key not in self.log_headers):
+                print(f"Trying to introduce a new key {key} that was not introduced in the first epoch")
+            #assert key in self.log_headers, "Trying to introduce a new key %s that you didn't include in the first iteration" % key
         assert key not in self.log_current_row, "You already set %s this iteration. Maybe you forgot to call dump_tabular()" % key
         self.log_current_row[key] = val
 
@@ -269,24 +271,39 @@ class EpochLogger(Logger):
             average_only (bool): If true, do not log the standard deviation
                 of the diagnostic over the epoch.
         """
-        if val is not None:
+        if val is not None or val != None:
             super().log_tabular(key, val)
+        #TODO (JJ): the first value of mixing weight is an integer and not in an array, everything else is an integer in an array
         else:
-            v = self.epoch_dict[key]
-            vals = np.concatenate(v) if isinstance(v[0], np.ndarray) and len(v[0].shape) > 0 else v
-            stats = mpi_statistics_scalar(vals, with_min_and_max=with_min_and_max)
-            super().log_tabular(key if average_only else 'Average' + key, stats[0])
-            if not (average_only):
-                super().log_tabular('Std' + key, stats[1])
-            if with_min_and_max:
-                super().log_tabular('Max' + key, stats[3])
-                super().log_tabular('Min' + key, stats[2])
-        self.epoch_dict[key] = []
+            if key in self.epoch_dict.keys(): 
+                v = self.epoch_dict[key]
+                
+                #vals = np.concatenate(v) if isinstance(v[0], np.ndarray) and len(v[0].shape) > 0 else v
+                #stats = mpi_statistics_scalar(vals, with_min_and_max=with_min_and_max)
+                #flatten all arrays to get the proper average
+                flattened_vals= []
+                for elm in v:
+                    if isinstance(elm, np.ndarray):
+                        flattened_vals.extend(elm.flatten())
+                    else:
+                        flattened_vals.append(elm)
+
+                stats = mpi_statistics_scalar(flattened_vals, with_min_and_max=with_min_and_max)
+
+                super().log_tabular('Average' + key, stats[0])
+                #super().log_tabular(key if average_only else 'Average' + key, stats[0])
+                if not (average_only):
+                    super().log_tabular('Std' + key, stats[1])
+                if with_min_and_max:
+                    super().log_tabular('Max' + key, stats[3])
+                    super().log_tabular('Min' + key, stats[2])
+        if key in self.epoch_dict.keys():
+            self.epoch_dict[key] = []
 
     def get_stats(self, key):
         """
         Lets an algorithm ask the logger for mean/std/min/max of a diagnostic.
         """
         v = self.epoch_dict[key]
-        vals = np.concatenate(v) if isinstance(v[0], np.ndarray) and len(v[0].shape) > 0 else v
-        return mpi_statistics_scalar(vals)
+        vals = np.concatena
+        

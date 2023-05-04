@@ -51,6 +51,7 @@ def setup_logger_kwargs(exp_name, seed=None, debug=False, data_dir=None, datesta
     ymd_time = time.strftime("_%Y-%m-%d_%H-%M-%S") if datestamp else ''
     relpath = ''.join([exp_name, ymd_time, f'_s{seed}'])
     data_dir = data_dir or DEFAULT_DATA_DIR
+
     if debug:
         data_dir = '/tmp'
     logger_kwargs = dict(output_dir=osp.join(data_dir, relpath),

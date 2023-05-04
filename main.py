@@ -27,6 +27,7 @@ def main(args):
     torch.set_num_threads(args.num_threads)
 
     # Set up logger
+
     logger = EpochLogger(**setup_logger_kwargs(args.exp_name, args.seed, args.debug))
     logger.save_config(args)
 

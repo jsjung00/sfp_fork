@@ -1,6 +1,6 @@
 {
     "exp_name": ["default", "experiment name"],
-    "env": ["antmaze-medium-diverse-v1", "environment name"],
+    "env": ["kitchen-mixed-v0", "environment name"],
     "epochs": [2000, "number of epochs"],
 
     "seed": [0, "seed"],

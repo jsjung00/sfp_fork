@@ -224,7 +224,7 @@ class HERReplayBuffer:
             k: v for k, v in self.__dict__.items() if isinstance(v, np.ndarray)
         }
         extra_state = {
-            'ptr': self.ptr,
+            'ptr': self.ptr % self.max_size,
             'size': self.size,
             'max_size': self.max_size,
         }

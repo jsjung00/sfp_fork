@@ -222,7 +222,7 @@ class FlowWrapper:
         with torch.no_grad():
             # transform action
             cond_inputs = torch.tensor(self.last_action, device=self.device).unsqueeze(0) if self.cond else None
-            action = self.flow(torch.tensor(action, device=self.device).unsqueeze(0), cond_inputs=cond_inputs, mode='inverse')[0].squeeze().numpy()
+            action = self.flow(torch.tensor(action, device=self.device).unsqueeze(0), cond_inputs=cond_inputs, mode='inverse')[0].squeeze().detach().cpu().numpy()
             action = np.clip(action, np.concatenate([self.inner.low]*self.n), np.concatenate([self.inner.high]*self.n))
         for a in np.split(action, self.n):
             obs, rew, done, info = self._env.step(a)

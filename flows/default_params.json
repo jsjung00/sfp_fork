@@ -19,7 +19,7 @@
     "log_interval": [1000, "how many batches to wait before logging training status"],
     "one_step": [false, "enables learning single action distributions"],
     "debug": [false, "debugging flag"],
-    "device": ["cpu", "torch device"],
+    "device": ["cuda:0", "torch device"],
     "deterministic": [false, "use deterministic actor instead of density model"],
     "gaussian": [false, "learn a gaussian prior"],
     "data_ratio": [1.0, "fraction of data to be used for training"]

@@ -1,3 +1,6 @@
+import glob
+import os
+import pickle
 import time
 import numpy as np
 import torch
@@ -41,6 +44,7 @@ class Trainer:
         self.bc_epochs = bc_epochs
         self.rand_init_cond=rand_init_cond
         self.prior_schedule = prior_kwargs['schedule']
+        self.dataset = None
 
     def train(self, agent, buffer, env_fn, epochs=100):
         '''
@@ -59,12 +63,17 @@ class Trainer:
         last_update = 0
         epoch_start = 0
         start_time = time.time()
+        duration = 0
         o, ep_ret, ep_len = env.reset(), 0, 0
         # Initialize previous actions by sampling dataset
         last_action = self.sample_actions_from_dataset(env)
         trajectory = dict(obs=[o], act=[], rew=[], done=[], last_act=[])
         self.n_env_reset = 0
         agent.pre_ep(self.n_env_reset)
+
+        load_path = self.get_most_recent_path()
+        if load_path is not None:
+            t, last_update, epoch_start, duration = self.load_state_dict(load_path, agent, buffer)
 
         if self.bc_epochs > 0:
             loader = torch.utils.data.DataLoader(BCDataset(env._short_name, visual=env.visual),
@@ -142,6 +151,12 @@ class Trainer:
                 # Save model
                 # if (epoch % self.save_freq == 0) or (epoch == epochs):
                 #     self.logger.save_state({'env': env}, None)
+                if (epoch % self.save_freq == 0) or (epoch == epochs) or (start_time - time.time()) > (int(3.5 * 60 * 60) - 180):
+                    # save_path = os.path.join(self.logger.output_dir, f'state_{epoch}.pkl')
+                    # effectively only saves latest
+                    save_path = os.path.join(self.logger.output_dir, f'state_0.pkl')
+                    self.save_state_dict(save_path, agent, buffer, t, last_update, epoch_start, time.time() - start_time + duration)
+                    self.logger.save_state({'env': env}, None)
 
                 # Test the performance of the deterministic version of the agent.
                 self.test_agent(agent, test_env)
@@ -153,14 +168,14 @@ class Trainer:
                 # Log info about epoch
                 self.logger.log_tabular('Epoch', epoch)
                 self.logger.log_tabular('EpRet', ep_ret, with_min_and_max=True)
-                #self.logger.log_tabular('TestEpRet', with_min_and_max=True)
+                self.logger.log_tabular('TestEpRet', with_min_and_max=True)
                 self.logger.log_tabular('SuccessRate', ep_ret > 0, with_min_and_max=True)
-                #self.logger.log_tabular('TestSuccessRate', with_min_and_max=True)
+                self.logger.log_tabular('TestSuccessRate', with_min_and_max=True)
                 self.logger.log_tabular('EpLen', ep_len, average_only=True)
-                #self.logger.log_tabular('TestEpLen', average_only=True)
+                self.logger.log_tabular('TestEpLen', average_only=True)
                 self.logger.log_tabular('TotalEnvInteracts', t)
-                #self.logger.log_tabular('Q1Vals', with_min_and_max=True)
-                #self.logger.log_tabular('Q2Vals', with_min_and_max=True)
+                self.logger.log_tabular('Q1Vals', with_min_and_max=True)
+                self.logger.log_tabular('Q2Vals', with_min_and_max=True)
                 self.logger.log_tabular('Weights', with_min_and_max=True)
                 self.logger.log_tabular('Priorities', with_min_and_max=True)
                 self.logger.log_tabular('LogPi', with_min_and_max=True)
@@ -170,8 +185,12 @@ class Trainer:
                 self.logger.log_tabular('MixingWeight', with_min_and_max=True)
                 self.logger.log_tabular('LossPi', average_only=True)
                 self.logger.log_tabular('LossQ', average_only=True)
-                self.logger.log_tabular('Time', time.time() - start_time)
+                self.logger.log_tabular('Time', time.time() - start_time + duration)
                 self.logger.dump_tabular()
+
+            if time.time() - start_time > int(3.5 * 60 * 60):
+                print('Stopping execution after 3.5hrs!')
+                return
 
     def test_agent(self, agent, test_env):
         """
@@ -219,7 +238,9 @@ class Trainer:
             self.logger.log_video(video_name, frames, global_step, test_env.metadata['video.frames_per_second'])
 
     def sample_actions_from_dataset(self, env):
-        dataset = env.get_primitive_dataset()
+        if self.dataset is None:
+            self.dataset = env.get_primitive_dataset()
+        dataset = self.dataset
 
         if not self.rand_init_cond:
             idx = np.random.choice(len(dataset['actions'])//500) * 500
@@ -230,3 +251,47 @@ class Trainer:
         
         return dataset['actions'][idx:idx+self.prior_n_step]
 
+    def save_state_dict(self, path, agent, buffer, t, last_update, epoch_start, duration):
+        dirname, basename = os.path.dirname(path), os.path.basename(path)
+        base, ext = os.path.splitext(basename)
+        agent_path = os.path.join(dirname, f'{base}_agent{ext}')
+        buffer_path = os.path.join(dirname, f'{base}_buffer{ext}')
+        with open(path, 'wb') as f:
+            pickle.dump({
+                't': t,
+                'last_update': last_update,
+                'epoch_start': epoch_start,
+                'duration': duration,
+            }, f)
+        agent.save_state_dict(agent_path)
+        buffer.save_state_dict(buffer_path)
+        self.logger.save_state_dict()
+
+    def load_state_dict(self, path, agent, buffer):
+        dirname, basename = os.path.dirname(path), os.path.basename(path)
+        base, ext = os.path.splitext(basename)
+        agent_path = os.path.join(dirname, f'{base}_agent{ext}')
+        buffer_path = os.path.join(dirname, f'{base}_buffer{ext}')
+        with open(path, 'rb') as f:
+            state_dict = pickle.load(f)
+        t = state_dict['t']
+        last_update = state_dict['last_update']
+        epoch_start = state_dict['epoch_start']
+        duration = state_dict['duration']
+        agent.load_state_dict(agent_path)
+        buffer.load_state_dict(buffer_path)
+        self.logger.load_state_dict()
+        return t, last_update, epoch_start, duration
+
+    def get_most_recent_path(self):
+        pattern = os.path.join(self.logger.output_dir, 'state_*.pkl')
+        paths = list(glob.glob(pattern))
+        paths = [p for p in paths if 'agent' not in p and 'buffer' not in p]
+        paths = [os.path.splitext(os.path.basename(p))[0] for p in paths]
+        epochs = [int(p.lstrip('state_')) for p in paths]
+        if len(epochs) > 0:
+            latest_epoch = sorted(epochs)[-1]
+            path = os.path.join(self.logger.output_dir, f'state_{latest_epoch}.pkl')
+            return path
+        else:
+            return None

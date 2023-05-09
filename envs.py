@@ -13,7 +13,7 @@ import gym
 from gym import spaces, Env
 from gym.spaces import Box
 # from tests.metaworld.envs.mujoco.sawyer_xyz.test_scripted_policies import ALL_ENVS, test_cases_latest_nonoise
-from metaworld.envs import ALL_V2_ENVIRONMENTS_GOAL_OBSERVABLE
+# from metaworld.envs import ALL_V2_ENVIRONMENTS_GOAL_OBSERVABLE
 from utils import DATASET_DIR
 
 SUPPORTED_SAWYER_ENVS = ['reach-v2', 'push-v2', 'pick-place-v2', 'door-open-v2', 'door-close-v2',
@@ -30,6 +30,10 @@ def make_env(args):
         env = gym.make(args.env)
         env.reset()
         return AntMazeWrapper(env, name=args.env)
+    if 'kitchen' in args.env:
+        env = gym.make(args.env)
+        env.reset()
+        return KitchenWrapper(env, name=args.env)
     elif args.env in SUPPORTED_SAWYER_ENVS:
         return SawyerWrapper(args.env, terminate_on_success=args.terminate_on_success, fix_seed=args.fix_env_seed,  neg_rew=args.neg_rew, goal_cond=args.goal_cond, visual=args.visual)
     elif any([s in args.env for s in ['swimmer', 'hopper', 'halfcheetah', 'ant', 'walker']]):
@@ -186,6 +190,29 @@ class AntMazeWrapper(gym.Wrapper):
         self._env_name = name
         self._short_name = name
         self.max_steps = 1000
+        self.obs = None
+        self._max_episode_steps = self.env._max_episode_steps
+
+    def get_primitive_flow_checkpoint(self, model, cond, n_step, ratio=1.0, one_step=False):
+        """ Returns the name of the file containing a flow model trained on task-agnostic trajectories. """
+        if ratio < 1.0:
+            return f'/{self._short_name}_primitive_{model}_{cond}_{n_step}_{ratio}.pt'
+        if one_step:
+            return f'/{self._short_name}_primitive_{model}_{cond}_{n_step}_one_step.pt'
+        return f'/{self._short_name}_primitive_{model}_{cond}_{n_step}.pt'
+
+    def get_primitive_dataset(self):
+        """ Returns a dataset of task-agnostic expert trajectories. """
+        return get_primitive_dataset(self._short_name)
+
+
+class KitchenWrapper(gym.Wrapper):
+    def __init__(self, env, name='kitchen-mixed-v0'):
+        super().__init__(env)
+        self._env = env
+        self._env_name = name
+        self._short_name = name
+        self.max_steps = 280
         self.obs = None
         self._max_episode_steps = self.env._max_episode_steps
 
@@ -784,5 +811,11 @@ def get_primitive_dataset(env_name, distilled=True):
     path = osp.join(DATASET_DIR, f'{env_name}_primitive_distilled.npy')
     if osp.isfile(path):
         return np.load(path, allow_pickle=True).item()   
+    else:
+        env = gym.make(env_name)
+        dataset =  env.get_dataset()
+        if not osp.isfile(path):
+            np.save(path, dataset, allow_pickle=True)
+        return dataset
     print(f"missing path file: {path}") 
     raise Exception(f'Dataset generation has not happened yet for {env_name}.')

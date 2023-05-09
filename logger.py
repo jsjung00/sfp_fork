@@ -8,6 +8,7 @@ import joblib
 import numpy as np
 import torch
 import os.path as osp, time, atexit, os
+import pickle
 import warnings
 from utils import proc_id, mpi_statistics_scalar, convert_json, get_hashes
 from torch.utils.tensorboard import SummaryWriter
@@ -67,7 +68,7 @@ class Logger:
                 print("Warning: Log dir %s already exists! Storing info there anyway." % self.output_dir)
             else:
                 os.makedirs(self.output_dir)
-            self.output_file = open(osp.join(self.output_dir, output_fname), 'w')
+            self.output_file = open(osp.join(self.output_dir, output_fname), 'a')
             atexit.register(self.output_file.close)
             print(colorize("Logging data to %s" % self.output_file.name, 'green', bold=True))
             self.writer = SummaryWriter(self.output_dir)
@@ -219,6 +220,20 @@ class Logger:
 
     def log_video(self, name, frames, global_step, fps):
         self.writer.add_video(name, frames, global_step, fps)
+
+    def save_state_dict(self):
+        state_dict = {
+            'first_row': self.first_row,
+            'log_headers': self.log_headers,
+            'log_current_row': self.log_current_row,
+        }
+        with open(osp.join(self.output_dir, 'logger_state.pkl'), 'wb') as f:
+            pickle.dump(state_dict, f)
+
+    def load_state_dict(self):
+        with open(osp.join(self.output_dir, 'logger_state.pkl'), 'rb') as f:
+            state_dict = pickle.load(f)
+        self.__dict__.update(state_dict)
 
 
 class EpochLogger(Logger):

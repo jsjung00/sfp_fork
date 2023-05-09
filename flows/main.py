@@ -5,6 +5,7 @@ Main script for training NVP-Flow models. Most of the codebase was adapted from 
 import argparse
 from datetime import datetime
 import copy
+import os
 import os.path as osp
 import json
 import utils

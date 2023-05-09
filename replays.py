@@ -2,6 +2,8 @@
 Replay buffer implementation.
 """
 
+import os
+import pickle
 import numpy as np
 import torch
 import gym
@@ -214,3 +216,22 @@ class HERReplayBuffer:
                 self.min_tree.update(_idx, _priority ** self.alpha)
                 self.max_tree.update(_idx, _priority)
                 self.maximal_priority = self.max_tree.total_value()
+
+    def save_state_dict(self, path):
+        path, ext = os.path.splitext(path)
+        path = f'{path}.npy'
+        state_dict = {
+            k: v for k, v in self.__dict__.items() if isinstance(v, np.ndarray)
+        }
+        extra_state = {
+            'ptr': self.ptr,
+            'size': self.size,
+            'max_size': self.max_size,
+        }
+        np.save(path, {**state_dict, **extra_state}, allow_pickle=True)
+
+    def load_state_dict(self, path):
+        path, ext = os.path.splitext(path)
+        path = f'{path}.npy'
+        state_dict = np.load(path, allow_pickle=True).item()
+        self.__dict__.update(state_dict)

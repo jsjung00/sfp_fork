@@ -27,7 +27,7 @@ def main(args):
     torch.set_num_threads(args.num_threads)
 
     # Set up logger
-    logger = EpochLogger(**setup_logger_kwargs(args.exp_name, args.seed, args.debug))
+    logger = EpochLogger(**setup_logger_kwargs(args.exp_name, args.seed, args.debug, data_dir=args.log_output_dir))
     logger.save_config(args)
 
     # Wrap environment to account for action prior, if enabled.

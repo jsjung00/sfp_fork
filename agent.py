@@ -92,7 +92,8 @@ class SAC(Agent):
         # Set up optimizers for policy and q-function
         self.pi_optimizer = Adam(self.ac.pi.parameters(), lr=self.lr)
         # List of parameters for both Q-networks
-        self.q_params = set(list(self.ac.q1.parameters()) + list(self.ac.q2.parameters()))
+        # self.q_params = set(list(self.ac.q1.parameters()) + list(self.ac.q2.parameters()))
+        self.q_params = list(self.ac.q1.parameters()) + list(self.ac.q2.parameters())
         self.q_optimizer = Adam(self.q_params, lr=self.lr)
         self.lambda_optimizer = Adam(self.ac.lambda_params, lr=self.lr)
 
@@ -426,3 +427,21 @@ class SAC(Agent):
 
     def load(self, path):
         raise NotImplementedError()
+
+    def save_state_dict(self, path):
+        state_dict = {
+            'ac': self.ac.state_dict(),
+            'ac_targ': self.ac_targ.state_dict(),
+            'pi_optimizer': self.pi_optimizer.state_dict(),
+            'q_optimizer': self.q_optimizer.state_dict(),
+            'lambda_optimizer': self.lambda_optimizer.state_dict(),
+        }
+        torch.save(state_dict, path)
+
+    def load_state_dict(self, path):
+        state_dict = torch.load(path)
+        self.ac.load_state_dict(state_dict['ac'])
+        self.ac_targ.load_state_dict(state_dict['ac_targ'])
+        self.pi_optimizer.load_state_dict(state_dict['pi_optimizer'])
+        self.q_optimizer.load_state_dict(state_dict['q_optimizer'])
+        self.lambda_optimizer.load_state_dict(state_dict['lambda_optimizer'])

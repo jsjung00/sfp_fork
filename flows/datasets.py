@@ -4,7 +4,7 @@ Implementation of datasets for training conditional models.
 import numpy as np
 import torch
 import sys 
-sys.path.insert(1, '/home/ripl/bpe/sfp')
+sys.path.insert(1, '/home-nfs/dyunis/sfp_fork')
 from envs import get_primitive_dataset
 import os.path as osp
 import os

@@ -225,7 +225,7 @@ class HERReplayBuffer:
         }
         extra_state = {
             'ptr': self.ptr % self.max_size,
-            'size': self.size,
+            'size': min(self.size, self.max_size),
             'max_size': self.max_size,
         }
         np.save(path, {**state_dict, **extra_state}, allow_pickle=True)

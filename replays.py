@@ -59,7 +59,8 @@ class HERReplayBuffer:
         self.last_act_buf = np.zeros((self.max_size, T, act_dim*prior_n_step), dtype=np.float32)
         # ptr points to the next free slot, size tracks the current size of the buffer
         # max_size represents thecapacity ofthe buffer
-        self.ptr, self.size, self.max_size = 0, 0, size
+        # self.ptr, self.size, self.max_size = 0, 0, size
+        self.ptr, self.size, self.max_size = 0, 0, size // T
 
         self.prioritize = prioritize
         self.alpha = alpha
@@ -234,4 +235,5 @@ class HERReplayBuffer:
         path, ext = os.path.splitext(path)
         path = f'{path}.npy'
         state_dict = np.load(path, allow_pickle=True).item()
+        state_dict['max_size'] = 1_000_000 // self.T
         self.__dict__.update(state_dict)
